@@ -9,18 +9,9 @@ public class Details {
     private Date birth;
     private List<Education> educations;
     private Set<Kid> kids;
-    private Details details;
 
     public Boolean getSex() {
         return sex;
-    }
-
-    public Details getDetails() {
-        return details;
-    }
-
-    public void setDetails(Details a) {
-        details = a;
     }
 
     public void setSex(Boolean sex) {
