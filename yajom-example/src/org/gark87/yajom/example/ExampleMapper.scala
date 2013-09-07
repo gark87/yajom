@@ -1,8 +1,10 @@
-import org.gark87.from._
-import org.gark87.to._
-import DebugMacros._
+package org.gark87.yajom.example
 
-class Impl extends Base {
+import org.gark87.yajom.BaseMapper
+import org.gark87.yajom.example.to.{Child, Person}
+import org.gark87.yajom.example.from.{Kid, Employee}
+
+class ExampleMapper extends BaseMapper {
   implicit def map(from: Person, to: Employee) {
     copy (from.getBirthDate) (nullSafe(to.getDetails.getDetails.setBirth))
     copy (from.getStrDate)   (nullSafe(to.getDetails.setBirth))

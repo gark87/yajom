@@ -1,5 +1,5 @@
-import org.gark87.from.Employee;
-import org.gark87.to.Person;
+import org.gark87.yajom.example.from.Employee;
+import org.gark87.yajom.example.to.Person;
 import org.junit.Before;
 import org.junit.Test;
 import org.nomin.NominMapper;

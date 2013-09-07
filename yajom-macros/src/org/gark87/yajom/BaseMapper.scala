@@ -1,3 +1,5 @@
+package org.gark87.yajom
+
 import java.util
 import java.util.Date
 import scala.Predef._
@@ -6,7 +8,7 @@ import scala.reflect.runtime.universe._
 import scala.reflect.runtime.{currentMirror => cm}
 
 
-class Base {
+class BaseMapper {
   implicit val m = this
 
   implicit def map[A, B](from: util.Collection[A], to: util.Collection[B])(implicit map: (A, B) => Unit, typeTag: TypeTag[B]) = {

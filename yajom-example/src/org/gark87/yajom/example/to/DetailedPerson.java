@@ -1,4 +1,4 @@
-package org.gark87.to;
+package org.gark87.yajom.example.to;
 
 public class DetailedPerson extends Person {
     private String description;

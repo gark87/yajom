@@ -1,13 +1,16 @@
+package org.gark87.yajom
+
 import language.experimental.macros
 import scala.reflect.runtime.universe.TypeTag
+import scala.util.regexp.Base
 
 
 object DebugMacros {
 
-  def copy[F, T](from: F)(setter: (T) => Unit)(implicit m: Base, see: TypeTag[T]): Unit = macro mapImpl[F, T]
+  def copy[F, T](from: F)(setter: (T) => Unit)(implicit m: BaseMapper, see: TypeTag[T]): Unit = macro mapImpl[F, T]
 
 
-  def mapImpl[F: c.WeakTypeTag, T: c.WeakTypeTag](c: reflect.macros.Context)(from: c.Expr[F])(setter: c.Expr[(T) => Unit])(m: c.Expr[Base], see: c.Expr[TypeTag[T]])
+  def mapImpl[F: c.WeakTypeTag, T: c.WeakTypeTag](c: reflect.macros.Context)(from: c.Expr[F])(setter: c.Expr[(T) => Unit])(m: c.Expr[BaseMapper], see: c.Expr[TypeTag[T]])
   : c.Expr[Unit] = {
     import c.universe._
 
@@ -49,10 +52,10 @@ object DebugMacros {
     }
   }
 
-  def nullSafe[T](expr: (T) => Unit)(implicit m: Base, see: TypeTag[T]): (T) => Unit = macro withNullGuards[T]
+  def nullSafe[T](expr: (T) => Unit)(implicit m: BaseMapper, see: TypeTag[T]): (T) => Unit = macro withNullGuards[T]
 
 
-  def withNullGuards[T](c: reflect.macros.Context)(expr: c.Expr[(T) => Unit])(m: c.Expr[Base], see: c.Expr[TypeTag[T]]): c.Expr[(T) => Unit] = {
+  def withNullGuards[T](c: reflect.macros.Context)(expr: c.Expr[(T) => Unit])(m: c.Expr[BaseMapper], see: c.Expr[TypeTag[T]]): c.Expr[(T) => Unit] = {
     import c.universe._
 
     var prefix: List[c.universe.Tree] = List()

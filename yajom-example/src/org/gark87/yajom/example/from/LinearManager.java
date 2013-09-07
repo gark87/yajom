@@ -1,4 +1,4 @@
-package org.gark87.from;
+package org.gark87.yajom.example.from;
 
 public class LinearManager extends Employee {
     private String characteristics;

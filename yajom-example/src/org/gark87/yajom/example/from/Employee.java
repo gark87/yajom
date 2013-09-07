@@ -1,4 +1,4 @@
-package org.gark87.from;
+package org.gark87.yajom.example.from;
 
 public class Employee {
     private Details details;

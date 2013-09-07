@@ -1,4 +1,4 @@
-package org.gark87.from;
+package org.gark87.yajom.example.from;
 
 import java.util.Date;
 import java.util.List;
