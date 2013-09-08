@@ -1,11 +1,11 @@
 package org.gark87.yajom.example
 
-import org.gark87.yajom.{BaseMapper, nullSafe}
+import org.gark87.yajom._
 
 import org.gark87.yajom.example.to.{Child, Person}
 import org.gark87.yajom.example.from.{Kid, Employee}
 
-class ExampleMapper extends BaseMapper {
+class ExampleMapper extends BaseMapper(new ExampleObjectFactory()) with StringDateConversion {
   implicit def map(from: Person, to: Employee) {
     nullSafe(to.getDetails.setBirth) = from.getBirthDate
     nullSafe(to.getDetails.setBirth) = from.getStrDate
