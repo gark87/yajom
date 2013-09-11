@@ -15,6 +15,29 @@ object nullSafe {
     c.abort(c.enclosingPosition, "YAJOM error: " + msg)
   }
 
+  def createMethodsFilter(c: reflect.macros.Context)(toType: c.Type, fromType: c.Type)(s: c.Symbol): Boolean = {
+    import c.universe._
+    if (!s.isMethod)
+      false
+    else {
+      val method: MethodSymbol = s.asMethod
+      if (!method.name.decoded.startsWith("create"))
+        false
+      else {
+        val returnType: Type = method.returnType
+        if (!(returnType <:< toType.erasure))
+          false
+        else {
+          method.paramss match {
+            case List(List(t)) if fromType <:< t.typeSignature => true
+            case List(List(t), List()) if fromType <:< t.typeSignature => true
+            case _ => false
+          }
+        }
+      }
+    }
+  }
+
   def mapImpl[F: c.WeakTypeTag, T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit], from: c.Expr[F])(m: c.Expr[M], see: c.Expr[TypeTag[T]])
   : c.Expr[Unit] = {
     import c.universe._
@@ -34,47 +57,22 @@ object nullSafe {
 
     def callObjectFactory(toType: c.Type, fromType: c.Type, from: c.Expr[_]): c.Expr[Any] = {
       val members: MemberScope = objectFactoryType.members
-      val candidates: Iterable[Symbol] = members.filter(createMethodsFilter(toType, fromType))
+      val candidates: Iterable[Symbol] = members.filter(createMethodsFilter(c)(toType, fromType))
       val size: Int = candidates.size
-      val methodName = "create_" + toType.toString.replaceAll("\\W+", "_")
       if (size == 0) {
-        val constructor = fromType.member(nme.CONSTRUCTOR)
+        val constructor = toType.member(nme.CONSTRUCTOR)
         if (constructor.isMethod && constructor.asMethod.isPublic) {
-          c.Expr[Any](New(TypeTree(fromType)))
+          c.Expr[Any](Apply(Select(New(TypeTree(toType)), nme.CONSTRUCTOR), List()))
         } else {
-          error(c, "Cannot find public constructor for: " + fromType + " \nOr " + methodName + "(" + fromType + ") : " + toType + " method @ " + objectFactoryType)
+          error(c, "Cannot find public constructor for: " + toType + " \nOr create...(" + fromType + ") : " + toType + " method @ " + objectFactoryType)
         }
       } else if (size == 1) {
-        c.Expr[Any](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(methodName)), if (from == null) List() else List(from.tree)))
+        val name = candidates.head.name.decoded
+        c.Expr[Any](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(name)), if (from == null) List() else List(from.tree)))
       } else {
         error(c, "More than one methods suitable for object creation: " + fromType + " -> " + toType + ":" + candidates.mkString("\n"))
       }
     }
-
-    def createMethodsFilter(toType: c.Type, fromType: c.Type)(s: c.Symbol): Boolean = {
-      if (!s.isMethod)
-        false
-      else {
-        val method: MethodSymbol = s.asMethod
-        if (method.name.decoded != "create_" + toType.toString.replaceAll("\\W+", "_"))
-          false
-        else {
-          val returnType: Type = method.returnType
-          if (!(returnType <:< toType))
-            false
-          else {
-            method.paramss match {
-              case List(List(t)) if t.typeSignature <:< fromType => true
-              case List(List(t), List()) if t.typeSignature <:< fromType => true
-              case _ => false
-            }
-          }
-
-        }
-      }
-    }
-
-
 
     def withNullGuards(expr: c.Expr[(T) => Unit]): c.Expr[(T) => Unit] = {
       var prefix: List[c.universe.Tree] = List()
@@ -111,8 +109,16 @@ object nullSafe {
             } else {
               val synthetic = (0l + scala.reflect.internal.Flags.SYNTHETIC).asInstanceOf[c.universe.FlagSet]
               val resultValue = newTermName(c.fresh("resultValue$"))
+              val e = c.Expr[Any](tree)
+              val o = callObjectFactory(ReturnType, c.typeOf[Nothing], null)
               prefix = prefix :+ ValDef(Modifiers(synthetic), resultValue, TypeTree(),
-                callObjectFactory(ReturnType, ReturnType, null).tree
+                reify {
+                  val tmp = e.splice
+                  if (tmp == null)
+                    o.splice
+                  else
+                    tmp
+                }.tree
               )
               Ident(resultValue)
             }
@@ -137,9 +143,10 @@ object nullSafe {
 
     if (fromType == toType) {
       val castedFrom: c.Expr[T] = from.asInstanceOf[c.Expr[T]]
-      reify {
-        withNullGuards(setter).splice(castedFrom.splice)
-      }
+      val guards = withNullGuards(setter)
+      c.Expr[Unit](reify {
+        guards.splice(castedFrom.splice)
+      }.tree)
     } else {
       val fromValueName = newTermName(c.fresh("yajom_fromValue$"))
       val fromValueDef = c.Expr[F](createVal(fromValueName, from, fromType))
