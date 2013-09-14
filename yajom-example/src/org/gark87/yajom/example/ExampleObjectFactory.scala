@@ -1,6 +1,6 @@
 package org.gark87.yajom.example
 
-import org.gark87.yajom.ObjectFactory
+import org.gark87.yajom.api.ObjectFactory
 
 class ExampleObjectFactory extends ObjectFactory with StringDateConversion with CollectionCreator {
 
