@@ -1,7 +1,18 @@
 package org.gark87.yajom.macros
 
-class ObjectCreator(val reporter : ErrorReporter) {
-  def createMethodsFilter(c: reflect.macros.Context)(toType: c.Type, fromType: c.Type)(s: c.Symbol): Boolean = {
+/**
+ * This class is all about creating new instances by calling `create...()` on ObjectFactory
+ * or calling default constructor if no appropriate methods were found
+ * @param reporter to report errors
+ */
+class ObjectCreator(val reporter: ErrorReporter) {
+
+  /**
+   * This method tests if s is appropriate `create...` method.
+   */
+  def createMethodsFilter(c: reflect.macros.Context)(toType: c.Type, predicate: (c.universe.MethodSymbol) => Boolean)
+                         (s: c.Symbol): Boolean =
+  {
     import c.universe._
     if (!s.isMethod)
       false
@@ -14,11 +25,7 @@ class ObjectCreator(val reporter : ErrorReporter) {
         if (!(returnType <:< toType.erasure))
           false
         else {
-          method.paramss match {
-            case List(List(t)) if fromType <:< t.typeSignature => true
-            case List(List(t), List()) if fromType <:< t.typeSignature => true
-            case _ => false
-          }
+          predicate(method)
         }
       }
     }
@@ -26,9 +33,18 @@ class ObjectCreator(val reporter : ErrorReporter) {
 
   def callObjectFactor(c: reflect.macros.Context)(toType: c.Type, fromType: c.Type, from: c.Expr[_], factoryType: c.Type): c.Expr[Any] = {
     import c.universe._
+
+    def testMethod(fromType: Type)(method: MethodSymbol): Boolean = {
+      method.paramss match {
+        case List(List(t)) if fromType <:< t.typeSignature => true
+        case List(List(t), List()) if fromType <:< t.typeSignature => true
+        case _ => false
+      }
+    }
+
     val members: MemberScope = factoryType.members
     val thisRef = This(c.enclosingClass.symbol)
-    val candidates: Iterable[Symbol] = members.filter(createMethodsFilter(c)(toType, fromType))
+    val candidates: Iterable[Symbol] = members.filter(createMethodsFilter(c)(toType, testMethod(fromType)))
     val size: Int = candidates.size
     if (size == 0) {
       val constructor = toType.member(nme.CONSTRUCTOR)

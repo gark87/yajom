@@ -3,8 +3,6 @@ package org.gark87.yajom.macros
 import language.experimental.macros
 import scala.reflect.runtime.universe.TypeTag
 import org.gark87.yajom.api.BaseMapper
-import com.sun.jndi.ldap.Obj
-import scala.reflect.macros.Context
 
 object nullSafe {
 
