@@ -8,6 +8,4 @@ trait StringDateConversion {
   def map(from: String, to: Date) = ???
 
   def createString(a: Any) : String = String.valueOf(a)
-
-//  def map(from: String, to: Date) = ???
 }

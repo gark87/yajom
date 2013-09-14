@@ -8,5 +8,6 @@ object MainApp extends App {
   private val to: Employee = new Employee
   private val from: Person = new Person
   from.setChildren(new util.ArrayList[Child]())
+  from.getChildren.add(new Child)
   new ExampleMapper().map(from, to)
 }

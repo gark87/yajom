@@ -10,7 +10,7 @@ class ExampleMapper extends BaseMapper(new ExampleObjectFactory()) with StringDa
   implicit def map(from: Person, to: Employee) {
     nullSafe(to.getDetails.setBirth) = from.getBirthDate
     nullSafe(to.getDetails.setBirth) = from.getStrDate
-    nullSafe(to.getDetails.setKids) = from.getChildren
+    nullSafe(to.getDetails.getKids.find( (a: Kid) => a.getKidName == "a").setAge) = String.valueOf(from.getChildren.get(0).getAge)
   }
 
   implicit def map(from: Child, to: Kid) {
