@@ -11,8 +11,7 @@ class ObjectCreator(val reporter: ErrorReporter) {
    * This method tests if s is appropriate `create...` method.
    */
   def createMethodsFilter(c: reflect.macros.Context)(toType: c.Type, predicate: (c.universe.MethodSymbol) => Boolean)
-                         (s: c.Symbol): Boolean =
-  {
+                         (s: c.Symbol): Boolean = {
     import c.universe._
     if (!s.isMethod)
       false
@@ -31,7 +30,37 @@ class ObjectCreator(val reporter: ErrorReporter) {
     }
   }
 
-  def callObjectFactor(c: reflect.macros.Context)(toType: c.Type, fromType: c.Type, from: c.Expr[_], factoryType: c.Type): c.Expr[Any] = {
+  def createDefaultObject(c: reflect.macros.Context)(toType: c.Type, factoryType: c.Type): c.Expr[Any] = {
+    import c.universe._
+
+    def testMethod(method: MethodSymbol): Boolean = {
+      method.paramss match {
+        case List() => true
+        case _ => false
+      }
+    }
+
+    val members: MemberScope = factoryType.members
+    val thisRef = This(c.enclosingClass.symbol)
+    val candidates: Iterable[Symbol] = members.filter(createMethodsFilter(c)(toType, testMethod))
+    val size: Int = candidates.size
+    if (size == 0) {
+      val constructor = toType.member(nme.CONSTRUCTOR)
+      if (constructor.isMethod && constructor.asMethod.isPublic) {
+        c.Expr[Any](Apply(Select(New(TypeTree(toType)), nme.CONSTRUCTOR), List()))
+      } else {
+        reporter.error("Cannot find public constructor for: " + toType + " \nOr create...() : " + toType + " method @ " + factoryType)
+      }
+    } else if (size == 1) {
+      val name = candidates.head.name.decoded
+      c.Expr[Any](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(name)), List()))
+    } else {
+      reporter.error("More than one methods suitable for object creation: " + toType + ":" + candidates.mkString("\n"))
+    }
+  }
+
+
+  def createObjectFrom(c: reflect.macros.Context)(toType: c.Type, fromType: c.Type, from: c.Expr[_], factoryType: c.Type): c.Expr[Any] = {
     import c.universe._
 
     def testMethod(fromType: Type)(method: MethodSymbol): Boolean = {
@@ -55,7 +84,7 @@ class ObjectCreator(val reporter: ErrorReporter) {
       }
     } else if (size == 1) {
       val name = candidates.head.name.decoded
-      c.Expr[Any](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(name)), if (from == null) List() else List(from.tree)))
+      c.Expr[Any](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(name)), List(from.tree)))
     } else {
       reporter.error("More than one methods suitable for object creation: " + fromType + " -> " + toType + ":" + candidates.mkString("\n"))
     }

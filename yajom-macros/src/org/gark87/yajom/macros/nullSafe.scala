@@ -41,7 +41,7 @@ object nullSafe {
             }
             val correctName = getterName.startsWith("get") || getterName.startsWith("is")
             val setterName = getterName.replaceFirst("^(is|get)", "set")
-            val returnType = getter.returnType
+            val returnType: c.Type = getter.returnType
             val setter = qualifier.tpe.members.find((x: Symbol) => {
               if (!x.isMethod)
                 false
@@ -63,7 +63,7 @@ object nullSafe {
               val synthetic = (0l + scala.reflect.internal.Flags.SYNTHETIC).asInstanceOf[c.universe.FlagSet]
               val resultValue = newTermName(c.fresh("resultValue$"))
               val e = c.Expr[Any](tree)
-              val o = creator.callObjectFactor(c) (returnType, fromType, null, objectFactoryType)
+              val o = creator.createDefaultObject(c) (returnType, objectFactoryType)
 
               prefix = prefix :+ ValDef(Modifiers(synthetic), resultValue, TypeTree(),
                 reify {
@@ -107,7 +107,7 @@ object nullSafe {
       val fromValueIdent = c.Expr[Any](Ident(fromValueName))
 
       val toValueName = newTermName(c.fresh("yajom_toValue$"))
-      val toValueDef = c.Expr[T](createVal(toValueName, creator.callObjectFactor(c)(toType, from.actualType, from, objectFactoryType), toType))
+      val toValueDef = c.Expr[T](createVal(toValueName, creator.createObjectFrom(c)(toType, from.actualType, from, objectFactoryType), toType))
       val toValueIdent = c.Expr[T](Ident(toValueName))
 
       val mapCall = c.Expr[Any](Apply(Select(thisRef, newTermName("map")), List(Ident(fromValueName), Ident(toValueName))))
