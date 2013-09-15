@@ -84,7 +84,7 @@ object nullSafe {
             }), epr)
           case ValDef(mods, name, tpt, rhs) =>
             ValDef(mods, name, tpt, addNullGuards(rhs))
-          case a => reporter.error("Too hard expression for YAJOM:\n1. Quick Fix: extract val without YAJOM\n2. mail gark87 <my_another@mail.ru>")
+          case a => reporter.error("Too complex expression `" + a + "` for YAJOM:\n1. Quick Fix: extract val without YAJOM\n2. mail gark87 <my_another@mail.ru>")
         }
       }
       val guards: c.universe.Tree = addNullGuards(expr.tree)
