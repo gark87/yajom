@@ -1,14 +1,13 @@
 package org.gark87.yajom.macros
 
 import language.experimental.macros
-import scala.reflect.runtime.universe.TypeTag
-import org.gark87.yajom.api.BaseMapper
+import org.gark87.yajom.base.BaseMapper
 
 object nullSafe extends {
 
-  def update[F, T, M <: BaseMapper[_]](setter: (T) => Unit, from: F)(implicit m: M, see: TypeTag[T]): Unit = macro mapImpl[F, T, M]
+  def update[F, T, M <: BaseMapper[_]](setter: (T) => Unit, from: F)(implicit m: M): Unit = macro mapImpl[F, T, M]
 
-  def mapImpl[F: c.WeakTypeTag, T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit], from: c.Expr[F])(m: c.Expr[M], see: c.Expr[TypeTag[T]])
+  def mapImpl[F: c.WeakTypeTag, T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit], from: c.Expr[F])(m: c.Expr[M])
   : c.Expr[Unit] = {
     import c.universe._
 

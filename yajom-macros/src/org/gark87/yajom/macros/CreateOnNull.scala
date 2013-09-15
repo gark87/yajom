@@ -1,6 +1,6 @@
 package org.gark87.yajom.macros
 
-import org.gark87.yajom.api.BaseMapper
+import org.gark87.yajom.base.BaseMapper
 import language.experimental.macros
 
 

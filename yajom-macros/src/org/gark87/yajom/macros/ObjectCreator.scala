@@ -1,5 +1,10 @@
 package org.gark87.yajom.macros
 
+import org.gark87.yajom.base.BaseMapper
+import language.experimental.macros
+import scala.reflect.runtime.universe.TypeTag
+import scala.reflect.macros.Context
+
 /**
  * This class is all about creating new instances by calling `create...()` on ObjectFactory
  * or calling default constructor if no appropriate methods were found
@@ -30,7 +35,7 @@ class ObjectCreator(val reporter: ErrorReporter) {
     }
   }
 
-  def createDefaultObject(c: reflect.macros.Context)(toType: c.Type, factoryType: c.Type): c.Expr[Any] = {
+  def createDefaultObject[T](c: reflect.macros.Context)(toType: c.Type, factoryType: c.Type): c.Expr[T] = {
     import c.universe._
 
     def testMethod(method: MethodSymbol): Boolean = {
@@ -47,13 +52,13 @@ class ObjectCreator(val reporter: ErrorReporter) {
     if (size == 0) {
       val constructor = toType.member(nme.CONSTRUCTOR)
       if (constructor.isMethod && constructor.asMethod.isPublic) {
-        c.Expr[Any](Apply(Select(New(TypeTree(toType)), nme.CONSTRUCTOR), List()))
+        c.Expr[T](Apply(Select(New(TypeTree(toType)), nme.CONSTRUCTOR), List()))
       } else {
         reporter.error("Cannot find public constructor for: " + toType + " \nOr create...() : " + toType + " method @ " + factoryType)
       }
     } else if (size == 1) {
       val name = candidates.head.name.decoded
-      c.Expr[Any](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(name)), List()))
+      c.Expr[T](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(name)), List()))
     } else {
       reporter.error("More than one methods suitable for object creation: " + toType + ":" + candidates.mkString("\n"))
     }
@@ -88,5 +93,16 @@ class ObjectCreator(val reporter: ErrorReporter) {
       reporter.error("More than one methods suitable for object creation: " + fromType + " -> " + toType + ":" + candidates.mkString("\n"))
     }
   }
+}
 
+
+object ObjectCreator {
+  def createDefault[T, M <: BaseMapper[_]](implicit m: M, t : TypeTag[T]) = macro macroImpl[T, M]
+
+  def macroImpl[T: c.WeakTypeTag, M <: BaseMapper[_]](c : reflect.macros.Context)(m : c.Expr[M], t : c.Expr[TypeTag[T]]): c.Expr[T] = {
+    import c.universe._
+    val objectFactoryType: c.Type = m.actualType.asInstanceOf[TypeRef].args.head
+    val toType: Type = c.weakTypeOf[T]
+    new ObjectCreator(new ErrorReporter(c)).createDefaultObject[T](c)(toType, objectFactoryType)
+  }
 }
