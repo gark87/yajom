@@ -2,7 +2,7 @@ package org.gark87.yajom.macros
 
 import org.gark87.yajom.base.BaseMapper
 import language.experimental.macros
-
+import scala.collection.mutable
 
 class CreateOnNull(creator: ObjectCreator) {
 
@@ -10,11 +10,17 @@ class CreateOnNull(creator: ObjectCreator) {
     import c.universe._
 
     val reporter = creator.reporter
+    val map = new mutable.HashMap[String, Tree]()
     var prefix: List[c.universe.Tree] = List()
+
+    val argsConverter = new ArgsConverter(reporter)
 
     def addNullGuards(tree: Tree): Tree = {
       tree match {
-        case Apply(Select(qualifier, name), List()) => {
+        case Apply(TypeApply(Select(qualifier, name), typeArgs), args) => {
+          Apply(TypeApply(Select(addNullGuards(qualifier), name), typeArgs), args.map((t: Tree) => addNullGuards(t)))
+        }
+        case Apply(Select(qualifier, name), args) => {
           val getterName = name.decoded
           val getter: MethodSymbol = qualifier.tpe.member(name).asMethod
           val correctParams = getter.paramss match {
@@ -37,8 +43,8 @@ class CreateOnNull(creator: ObjectCreator) {
             }
           })
           val newQ = addNullGuards(qualifier)
-          if (!correctName || !correctParams) {
-            Select(newQ, name)
+          if (!correctName || !correctParams || !args.isEmpty) {
+            Apply(Select(newQ, name), argsConverter.convert(c)(getter, args))
           } else if (setter.isEmpty) {
             reporter.error("Cannot find setter")
           } else {
@@ -64,10 +70,15 @@ class CreateOnNull(creator: ObjectCreator) {
         case Block(stats, epr) =>
           Block(stats.map((s: Tree) => {
             addNullGuards(s)
-          }), epr)
-        case ValDef(mods, name, tpt, rhs) =>
+          }), addNullGuards(epr))
+        case ValDef(mods, name, tpt, rhs) => {
+          map.put(name.decoded, tree)
           ValDef(mods, name, tpt, addNullGuards(rhs))
+        }
+        case Select(qualifier, name) => Select(addNullGuards(qualifier), name)
         case Ident(name) => Ident(name)
+        case This(a) => This(a)
+        case Function(valdefs, body) => Function(valdefs, body)
         case a => reporter.error("Too complex expression `" + a + "` for YAJOM:\n1. Quick Fix: extract val without YAJOM\n2. mail gark87 <my_another@mail.ru>")
       }
     }
