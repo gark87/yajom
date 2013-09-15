@@ -59,7 +59,6 @@ class ObjectCreator(val reporter: ErrorReporter) {
     }
   }
 
-
   def createObjectFrom(c: reflect.macros.Context)(toType: c.Type, fromType: c.Type, from: c.Expr[_], factoryType: c.Type): c.Expr[Any] = {
     import c.universe._
 
