@@ -12,7 +12,8 @@ class ExampleMapper extends BaseMapper(new ExampleObjectFactory()) with StringDa
     val details = createOnNull(to.getDetails)
     nullSafe(details.setBirth) = from.getBirthDate
     nullSafe(details.setBirth) = from.getStrDate
-    nullSafe(details.getKids.find( (a: Kid) => a.getKidName == "a").setAge) = String.valueOf(from.getChildren.get(0).getAge)
+    val a = createOnNull(details.getKids.find( (a: Kid) => a.getKidName == "a"))
+    nullSafe(a.setAge) = String.valueOf(from.getChildren.get(0).getAge)
   }
 
   implicit def map(from: Child, to: Kid) {

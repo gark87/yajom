@@ -3,7 +3,6 @@ package org.gark87.yajom.macros
 import org.gark87.yajom.base.BaseMapper
 import language.experimental.macros
 import scala.reflect.runtime.universe.TypeTag
-import scala.reflect.macros.Context
 
 /**
  * This class is all about creating new instances by calling `create...()` on ObjectFactory
@@ -40,7 +39,7 @@ class ObjectCreator(val reporter: ErrorReporter) {
 
     def testMethod(method: MethodSymbol): Boolean = {
       method.paramss match {
-        case List() => true
+        case List(List()) => true
         case _ => false
       }
     }
@@ -57,8 +56,25 @@ class ObjectCreator(val reporter: ErrorReporter) {
         reporter.error("Cannot find public constructor for: " + toType + " \nOr create...() : " + toType + " method @ " + factoryType)
       }
     } else if (size == 1) {
-      val name = candidates.head.name.decoded
-      c.Expr[T](Apply(Select(Select(thisRef, newTermName("factory")), newTermName(name)), List()))
+      val method: Symbol = candidates.head
+      val name = method.name.decoded
+      val typeArgs = toType match {
+        case TypeRef(pre, sum, args) => args
+        case _ => List()
+      }
+
+      if (typeArgs.isEmpty) {
+        c.Expr[T](Apply(
+            Select(Select(thisRef, newTermName("factory")), newTermName(name)),
+          List()))
+      } else {
+        val typeTrees = typeArgs.map((t: Type) => Ident(t.typeSymbol))
+        c.Expr[T](Apply(
+            TypeApply(
+              Select(Select(thisRef, newTermName("factory")), newTermName(name)),
+            typeTrees),
+          List()))
+      }
     } else {
       reporter.error("More than one methods suitable for object creation: " + toType + ":" + candidates.mkString("\n"))
     }
