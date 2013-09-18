@@ -10,7 +10,7 @@ class CreateOnNull(creator: ObjectCreator) {
     import c.universe._
 
     val reporter = creator.reporter
-    val map = new mutable.HashMap[String, Tree]()
+    val vars = new mutable.HashMap[String, Tree]()
     var prefix: List[c.universe.Tree] = List()
 
     val argsConverter = new ArgsConverter(reporter)
@@ -44,7 +44,8 @@ class CreateOnNull(creator: ObjectCreator) {
           })
           val newQ = addNullGuards(qualifier)
           if (!correctName || !correctParams || !args.isEmpty) {
-            Apply(Select(newQ, name), argsConverter.convert(c)(getter, args))
+            val convert: List[Tree] = argsConverter.convert(c)(getter, args, vars, objectFactoryType)
+            Apply(Select(newQ, name), convert)
           } else if (setter.isEmpty) {
             reporter.error("Cannot find setter")
           } else {
@@ -72,13 +73,13 @@ class CreateOnNull(creator: ObjectCreator) {
             addNullGuards(s)
           }), addNullGuards(epr))
         case ValDef(mods, name, tpt, rhs) => {
-          map.put(name.decoded, tree)
+          vars.put(name.decoded, rhs)
           ValDef(mods, name, tpt, addNullGuards(rhs))
         }
         case Select(qualifier, name) => Select(addNullGuards(qualifier), name)
         case Ident(name) => Ident(name)
         case This(a) => This(a)
-        case Function(valdefs, body) => Function(valdefs, body)
+        case Function(valdefs, body) => Function(valdefs, addNullGuards(body))
         case a => reporter.error("Too complex expression `" + a + "` for YAJOM:\n1. Quick Fix: extract val without YAJOM\n2. mail gark87 <my_another@mail.ru>")
       }
     }
@@ -88,7 +89,7 @@ class CreateOnNull(creator: ObjectCreator) {
         c.Expr[T](Block(d, c.resetAllAttrs(b)))
       case Ident(name) =>
         c.Expr[T](Block(prefix, c.resetAllAttrs(Ident(name))))
-      case _ => reporter.error("no need of `nullSafe'")
+      case _ => reporter.error("no need of `CreateOnNull'")
     }
   }
 }

@@ -5,7 +5,7 @@ import collection.JavaConversions._
 class YajomCollection[T <: java.lang.Object](val source: java.util.Collection[T]) {
   val seq = source.toSeq
 
-  def find(predicate : T => Boolean, @CreateOnNull("predicate") notNullPredicate : T => Boolean = null) : T = {
+  def find(@CreateOnNull("predicate") predicate : T => Boolean) : T = {
     val result: Option[T] = seq.find(predicate)
     result match {
       case None => null.asInstanceOf[T]
