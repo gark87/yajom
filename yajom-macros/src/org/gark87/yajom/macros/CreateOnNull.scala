@@ -50,7 +50,7 @@ class CreateOnNull(creator: ObjectCreator) {
             reporter.error("Cannot find setter")
           } else {
             val synthetic = (0l + scala.reflect.internal.Flags.SYNTHETIC).asInstanceOf[c.universe.FlagSet]
-            val resultValue = newTermName(c.fresh("resultValue$"))
+            val resultValue = newTermName(c.fresh("CON_resultValue$"))
             val e = c.Expr[Any](tree)
             val o = creator.createDefaultObject(c)(returnType, objectFactoryType)
 
@@ -87,9 +87,9 @@ class CreateOnNull(creator: ObjectCreator) {
     guards match {
       case Block(a, b) => val d: List[c.universe.Tree] = prefix ::: a
         c.Expr[T](Block(d, c.resetAllAttrs(b)))
-      case Ident(name) =>
-        c.Expr[T](Block(prefix, c.resetAllAttrs(Ident(name))))
-      case _ => reporter.error("no need of `CreateOnNull'")
+      case Function(valdefs, body) => c.Expr[T](Function(valdefs, Block(prefix, body)))
+      case any =>
+        c.Expr[T](Block(prefix, c.resetAllAttrs(any)))
     }
   }
 }

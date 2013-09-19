@@ -7,13 +7,15 @@ class ArgsConverter(reporter: ErrorReporter) {
   def convert(c: reflect.macros.Context)(method: c.universe.MethodSymbol, args: scala.List[c.Tree], vars: mutable.HashMap[String, c.Tree], objectFactoryType: c.Type): scala.List[c.Tree] = {
     import c.universe._
 
-    def wrapParameter(annotation : c.universe.Annotation, option : Option[c.Tree]) : c.Tree = {
+    def wrapParameter(annotation : Annotation, option : Option[c.Tree]) : c.Tree = {
      option match {
         case Some(x) => {
           val name = annotation.tpe.typeSymbol.asClass.fullName
           if (name.endsWith("CreateOnNull")) {
             val createOnNull: CreateOnNull = new CreateOnNull(new ObjectCreator(reporter))
             createOnNull.process(c)(c.Expr(x), objectFactoryType).tree
+          } else if (name.endsWith("ReturnOnNull")) {
+            new ReturnOnNull(reporter).process(c)(c.Expr(x), c.Expr(Literal(Constant(false)))).tree
           } else {
             x
           }

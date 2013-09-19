@@ -1,15 +1,15 @@
 package org.gark87.yajom.base
 
-import collection.JavaConversions._
 
 class YajomCollection[T <: java.lang.Object](val source: java.util.Collection[T]) {
-  val seq = source.toSeq
 
-  def find(@CreateOnNull("predicate") predicate : T => Boolean) : T = {
-    val result: Option[T] = seq.find(predicate)
-    result match {
-      case None => null.asInstanceOf[T]
-      case Some(t) => t
+  def find(@ReturnOnNull("predicate") predicate : T => Boolean) : T = {
+    val it = source.iterator()
+    while(it.hasNext) {
+      val next = it.next()
+      if (predicate(next))
+        return next
     }
+    null.asInstanceOf[T]
   }
 }
