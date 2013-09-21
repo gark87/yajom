@@ -52,15 +52,20 @@ class CreateOnNull(creator: ObjectCreator) {
             val synthetic = (0l + scala.reflect.internal.Flags.SYNTHETIC).asInstanceOf[c.universe.FlagSet]
             val resultValue = newTermName(c.fresh("CON_resultValue$"))
             val e = c.Expr[Any](tree)
-            val o = creator.createDefaultObject(c)(returnType, objectFactoryType)
+            val newValue = newTermName(c.fresh("CON_newValue$"))
+            val setterValue = c.Expr[T](Block(
+              ValDef(Modifiers(synthetic), newValue, TypeTree(), creator.createDefaultObject(c)(returnType, objectFactoryType).tree),
+              Apply(Select(qualifier, newTermName(setterName)), List(Ident(newValue))),
+              Ident(newValue)
+            ))
 
             prefix = prefix :+ ValDef(Modifiers(synthetic), resultValue, TypeTree(),
               reify {
-                val tmp = e.splice
-                if (tmp == null)
-                  o.splice
-                else
-                  tmp
+                val CON_oldValue = e.splice
+                if (CON_oldValue == null) {
+                  setterValue.splice
+                } else
+                  CON_oldValue
               }.tree
             )
             Ident(resultValue)

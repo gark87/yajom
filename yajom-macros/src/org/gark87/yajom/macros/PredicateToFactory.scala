@@ -44,7 +44,7 @@ class PredicateToFactory(reporter:ErrorReporter) {
     tree match {
       case Function(List(ValDef(mods, name, tpt, rhs)), body) => {
         val z = tpt;
-        convertAnd(body, Function(List(), ))
+//        convertAnd(body, Function(List(), ))
         expr
       }
       case _ => reporter.error("Unexpected (waiting for function def with one param): " + tree)
