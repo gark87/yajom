@@ -16,6 +16,8 @@ class ArgsConverter(reporter: ErrorReporter) {
             createOnNull.process(c)(c.Expr(x), objectFactoryType).tree
           } else if (name.endsWith("ReturnOnNull")) {
             new ReturnOnNull(reporter).process(c)(c.Expr(x), c.Expr(Literal(Constant(false)))).tree
+          } else if (name.endsWith("PredicateToFactory")) {
+            new PredicateToFactory(reporter).process(c)(c.Expr(x)).tree
           } else {
             x
           }

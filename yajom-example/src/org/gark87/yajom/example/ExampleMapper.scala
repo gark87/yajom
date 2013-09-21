@@ -10,9 +10,9 @@ import org.gark87.yajom.macros.CreateOnNull._
 class ExampleMapper extends BaseMapper(new ExampleObjectFactory()) with StringDateConversion with CollectionCreator {
   implicit def map(from: Person, to: Employee) {
     val details = createOnNull(to.getDetails)
-    nullSafe(details.setBirth) = from.getBirthDate
-    nullSafe(details.setBirth) = from.getStrDate
-    val a = createOnNull(details.getKids.find( (a: Kid) => a.getKidName.equals("a")))
+//    nullSafe(details.setBirth) = from.getBirthDate
+//    nullSafe(details.setBirth) = from.getStrDate
+    val a = createOnNull(details.getKids.find( (a: Kid) => a.getKidName.equals("a") && a.getKidName.equals("a")&& a.getKidName.equals("a")))
     nullSafe(a.setAge) = String.valueOf(from.getChildren.get(0).getAge)
   }
 

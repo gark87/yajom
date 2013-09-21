@@ -79,7 +79,7 @@ class CreateOnNull(creator: ObjectCreator) {
         case Select(qualifier, name) => Select(addNullGuards(qualifier), name)
         case Ident(name) => Ident(name)
         case This(a) => This(a)
-        case Function(valdefs, body) => Function(valdefs, addNullGuards(body))
+        case Function(valdefs, body) => Function(valdefs, body)
         case a => reporter.error("Too complex expression `" + a + "` for YAJOM:\n1. Quick Fix: extract val without YAJOM\n2. mail gark87 <my_another@mail.ru>")
       }
     }
