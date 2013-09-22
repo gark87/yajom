@@ -9,7 +9,7 @@ import org.junit.Test
 import java.util
 
 class CollectionsMapper extends DefaultMapper {
-  implicit def toEmployee(from: Person) : Employee = {
+  implicit def toEmployee(from: Person): Employee = {
     val result = new Employee()
     yajom(result.getDetails.setBirth)(from.getBirthDate)
     yajom(result.setLast)(from.getLastName)
@@ -17,7 +17,7 @@ class CollectionsMapper extends DefaultMapper {
     result
   }
 
-  implicit def toKid(from: Child) : Kid = {
+  implicit def toKid(from: Child): Kid = {
     val result = new Kid
 
     yajom(result.setAge)(from.getAge)
@@ -27,7 +27,9 @@ class CollectionsMapper extends DefaultMapper {
   }
 }
 
-class CollectionsMapperTest extends MapperTest(new CollectionsMapper){
+class CollectionsTest extends MapperTest {
+  private val mapper = new CollectionsMapper
+
   @Test def testSimple() {
     val employee = mapper.toEmployee(person)
     assertNotNull(employee)

@@ -9,7 +9,7 @@ import java.util.Date
 import org.junit.Test
 
 class SimpleMapper extends BaseMapper {
-  implicit def toEmployee(from: Person) : Employee  = {
+  implicit def toEmployee(from: Person): Employee = {
     val result = new Employee()
 
     val details = createOnNull(result.getDetails)
@@ -19,7 +19,9 @@ class SimpleMapper extends BaseMapper {
   }
 }
 
-class SimpleMapperTest extends MapperTest(new SimpleMapper){
+class SimpleTest extends MapperTest {
+  private val mapper = new SimpleMapper
+
   @Test def testSimple() {
     val employee = mapper.toEmployee(person)
     assertNotNull(employee)
