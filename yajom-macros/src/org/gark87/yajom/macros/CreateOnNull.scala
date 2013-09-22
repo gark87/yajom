@@ -6,6 +6,43 @@ import scala.collection.mutable
 
 class CreateOnNull(creator: ObjectCreator) {
 
+
+  def findSetter[T: c.WeakTypeTag](c: reflect.macros.Context)
+                                  (qualifier: c.Tree, name: c.Name, args: List[c.Tree],
+                                   notGetter: (c.universe.MethodSymbol) => c.Tree,
+                                   ok: (String, c.Type) => c.Tree) : c.Tree = {
+    import c.universe._
+
+    val getterName = name.decoded
+    val getter: MethodSymbol = qualifier.tpe.member(name).asMethod
+    val correctParams = getter.paramss match {
+      case List(List()) => true
+      case _ => false
+    }
+    val correctName = getterName.startsWith("get") || getterName.startsWith("is")
+    val setterName = getterName.replaceFirst("^(is|get)", "set")
+    val returnType: c.Type = getter.returnType
+    val setter = qualifier.tpe.members.find((x: Symbol) => {
+      if (!x.isMethod)
+        false
+      else {
+        val method: MethodSymbol = x.asMethod
+        val correctSetterParams = method.paramss match {
+          case List(List(termSymbol)) => termSymbol.asTerm.typeSignature == returnType
+          case _ => false
+        }
+        method.isMethod && correctSetterParams && method.isPublic && setterName == method.name.decoded
+      }
+    })
+    if (!correctName || !correctParams || !args.isEmpty) {
+      notGetter(getter)
+    } else if (setter.isEmpty) {
+      creator.reporter.error("Cannot find setter for " + name + " @ " + qualifier)
+    } else {
+      ok(setterName, returnType)
+    }
+  }
+
   def process[T: c.WeakTypeTag](c: reflect.macros.Context)(expr: c.Expr[T], objectFactoryType: c.Type): c.Expr[T] = {
     import c.universe._
 
@@ -21,45 +58,21 @@ class CreateOnNull(creator: ObjectCreator) {
           Apply(TypeApply(Select(addNullGuards(qualifier), name), typeArgs), args.map((t: Tree) => addNullGuards(t)))
         }
         case Apply(Select(qualifier, name), args) => {
-          val getterName = name.decoded
-          val getter: MethodSymbol = qualifier.tpe.member(name).asMethod
-          val correctParams = getter.paramss match {
-            case List(List()) => true
-            case _ => false
-          }
-          val correctName = getterName.startsWith("get") || getterName.startsWith("is")
-          val setterName = getterName.replaceFirst("^(is|get)", "set")
-          val returnType: c.Type = getter.returnType
-          val setter = qualifier.tpe.members.find((x: Symbol) => {
-            if (!x.isMethod)
-              false
-            else {
-              val method: MethodSymbol = x.asMethod
-              val correctSetterParams = method.paramss match {
-                case List(List(termSymbol)) => termSymbol.asTerm.typeSignature == returnType
-                case _ => false
-              }
-              method.isMethod && correctSetterParams && method.isPublic && setterName == method.name.decoded
-            }
-          })
           val newQ = addNullGuards(qualifier)
-          if (!correctName || !correctParams || !args.isEmpty) {
+          findSetter[T](c)(qualifier, name, args, (getter) => {
             val convert: List[Tree] = argsConverter.convert(c)(getter, args, vars, objectFactoryType)
             Apply(Select(newQ, name), convert)
-          } else if (setter.isEmpty) {
-            reporter.error("Cannot find setter")
-          } else {
-            val synthetic = (0l + scala.reflect.internal.Flags.SYNTHETIC).asInstanceOf[c.universe.FlagSet]
+          }, (setterName, returnType) => {
             val resultValue = newTermName(c.fresh("CON_resultValue$"))
             val e = c.Expr[Any](tree)
             val newValue = newTermName(c.fresh("CON_newValue$"))
             val setterValue = c.Expr[T](Block(
-              ValDef(Modifiers(synthetic), newValue, TypeTree(), creator.createDefaultObject(c)(returnType, objectFactoryType).tree),
-              Apply(Select(qualifier, newTermName(setterName)), List(Ident(newValue))),
+              ValDef(Modifiers(), newValue, TypeTree(), creator.createDefaultObject(c)(returnType, objectFactoryType).tree),
+              Apply(Select(newQ, newTermName(setterName)), List(Ident(newValue))),
               Ident(newValue)
             ))
 
-            prefix = prefix :+ ValDef(Modifiers(synthetic), resultValue, TypeTree(),
+            prefix = prefix :+ ValDef(Modifiers(), resultValue, TypeTree(),
               reify {
                 val CON_oldValue = e.splice
                 if (CON_oldValue == null) {
@@ -69,7 +82,7 @@ class CreateOnNull(creator: ObjectCreator) {
               }.tree
             )
             Ident(resultValue)
-          }
+          })
         }
         case Apply(fun, args) =>
           Apply(addNullGuards(fun), args)
@@ -79,7 +92,7 @@ class CreateOnNull(creator: ObjectCreator) {
           }), addNullGuards(epr))
         case ValDef(mods, name, tpt, rhs) => {
           vars.put(name.decoded, rhs)
-          ValDef(mods, name, tpt, addNullGuards(rhs))
+          ValDef(mods, name, tpt, c.resetAllAttrs(addNullGuards(rhs)))
         }
         case Select(qualifier, name) => Select(addNullGuards(qualifier), name)
         case Ident(name) => Ident(name)
@@ -100,7 +113,7 @@ class CreateOnNull(creator: ObjectCreator) {
 }
 
 object CreateOnNull {
-  def macroImpl[F: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(func : c.Expr[F])(m : c.Expr[M]) : c.Expr[F] = {
+  def macroImpl[F: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(func: c.Expr[F])(m: c.Expr[M]): c.Expr[F] = {
     import c.universe._
 
     val reporter = new ErrorReporter(c)

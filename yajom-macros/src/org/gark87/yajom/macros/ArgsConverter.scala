@@ -3,11 +3,10 @@ package org.gark87.yajom.macros
 import scala.collection.mutable
 
 class ArgsConverter(reporter: ErrorReporter) {
-
   def convert(c: reflect.macros.Context)(method: c.universe.MethodSymbol, args: scala.List[c.Tree], vars: mutable.HashMap[String, c.Tree], objectFactoryType: c.Type): scala.List[c.Tree] = {
     import c.universe._
 
-    def wrapParameter(annotation : Annotation, option : Option[c.Tree]) : c.Tree = {
+    def wrapParameter(annotation : Annotation, option : Option[Tree]) : Tree = {
      option match {
         case Some(x) => {
           val name = annotation.tpe.typeSymbol.asClass.fullName
@@ -17,7 +16,7 @@ class ArgsConverter(reporter: ErrorReporter) {
           } else if (name.endsWith("ReturnOnNull")) {
             new ReturnOnNull(reporter).process(c)(c.Expr(x), c.Expr(Literal(Constant(false)))).tree
           } else if (name.endsWith("PredicateToFactory")) {
-            new PredicateToFactory(reporter).process(c)(c.Expr(x)).tree
+            new PredicateToFactory(reporter).process(c)(c.Expr(x), objectFactoryType).tree
           } else {
             x
           }
@@ -31,7 +30,7 @@ class ArgsConverter(reporter: ErrorReporter) {
         val map = params.map(_.name.decoded).zip(args).toMap
         params.zip(args).map((pair: (Symbol, Tree)) => {
           val expr = pair._2
-          pair._1.annotations.filter(_.tpe.typeSymbol.asClass.fullName.startsWith("org.gark87.yajom.base.")) match {
+          pair._1.annotations.filter(_.tpe.typeSymbol.asClass.fullName.startsWith("org.gark87.yajom.annotations.")) match {
             case List() => expr
             case List(annotation) => {
               val annotationArgs = annotation.javaArgs

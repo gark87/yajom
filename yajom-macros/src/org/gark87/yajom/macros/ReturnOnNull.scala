@@ -33,7 +33,7 @@ class ReturnOnNull(reporter: ErrorReporter) {
       }
     }
     def foldPrefixes(tree: Tree): Tree = {
-      prefix.foldRight(tree)((valDef: ValDef, result: Tree) => {
+      c.resetAllAttrs(prefix.foldRight(tree)((valDef: ValDef, result: Tree) => {
         val reference = c.Expr[Any](Ident(valDef.name))
         val defineVal = c.Expr[Any](valDef)
         val resultExpr = c.Expr[Any](result)
@@ -45,7 +45,7 @@ class ReturnOnNull(reporter: ErrorReporter) {
             resultExpr.splice
           }
         }.tree
-      })
+      }))
     }
     val guards: Tree = addNullGuards(expr.tree)
     guards match {
