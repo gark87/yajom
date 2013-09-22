@@ -3,6 +3,7 @@ package org.gark87.yajom.macros
 import org.gark87.yajom.base.BaseMapper
 import language.experimental.macros
 import scala.collection.mutable
+import scala.reflect.macros.Universe
 
 class CreateOnNull(creator: ObjectCreator) {
 
@@ -10,7 +11,7 @@ class CreateOnNull(creator: ObjectCreator) {
   def findSetter[T: c.WeakTypeTag](c: reflect.macros.Context)
                                   (qualifier: c.Tree, name: c.Name, args: List[c.Tree],
                                    notGetter: (c.universe.MethodSymbol) => c.Tree,
-                                   ok: (String, c.Type) => c.Tree) : c.Tree = {
+                                   ok: (String, c.Type) => c.Tree): c.Tree = {
     import c.universe._
 
     val getterName = name.decoded
@@ -52,23 +53,35 @@ class CreateOnNull(creator: ObjectCreator) {
 
     val argsConverter = new ArgsConverter(reporter)
 
+    def collectAllArgs(tree: Tree, list : List[List[Tree]]) : (List[List[Tree]], Tree, Tree, Name) = {
+      tree match {
+        case Apply(call, args) => collectAllArgs(call, args :: list)
+        case TypeApply(Select(qualifier, name), typeArgs) => (list, addNullGuards(tree), qualifier, name)
+        case Select(qualifier, name) => (list, addNullGuards(tree), qualifier, name)
+        case _ => reporter.error("Cannot find Select, have instead: "+ tree)
+      }
+    }
+
     def addNullGuards(tree: Tree): Tree = {
       tree match {
-        case Apply(TypeApply(Select(qualifier, name), typeArgs), args) => {
-          Apply(TypeApply(Select(addNullGuards(qualifier), name), typeArgs), args.map((t: Tree) => addNullGuards(t)))
-        }
-        case Apply(Select(qualifier, name), args) => {
-          val newQ = addNullGuards(qualifier)
+        case Apply(select, args) => {
+          val allArgs = collectAllArgs(tree, List())
+          val name = allArgs._4
+          val qualifier = allArgs._3
+          val getter: MethodSymbol = qualifier.tpe.member(name).asMethod
           findSetter[T](c)(qualifier, name, args, (getter) => {
-            val convert: List[Tree] = argsConverter.convert(c)(getter, args, vars, objectFactoryType)
-            Apply(Select(newQ, name), convert)
+            val convert = argsConverter.convert(c)(getter, allArgs._1, vars, objectFactoryType)
+            val result = convert.foldLeft[Tree](allArgs._2)((tree: Tree, args: List[Tree]) => {
+              Apply(tree, args)
+            })
+            c.resetAllAttrs(result)
           }, (setterName, returnType) => {
             val resultValue = newTermName(c.fresh("CON_resultValue$"))
             val e = c.Expr[Any](tree)
             val newValue = newTermName(c.fresh("CON_newValue$"))
             val setterValue = c.Expr[T](Block(
               ValDef(Modifiers(), newValue, TypeTree(), creator.createDefaultObject(c)(returnType, objectFactoryType).tree),
-              Apply(Select(newQ, newTermName(setterName)), List(Ident(newValue))),
+              Apply(Select(qualifier, newTermName(setterName)), List(Ident(newValue))),
               Ident(newValue)
             ))
 
@@ -84,8 +97,6 @@ class CreateOnNull(creator: ObjectCreator) {
             Ident(resultValue)
           })
         }
-        case Apply(fun, args) =>
-          Apply(addNullGuards(fun), args)
         case Block(stats, epr) =>
           Block(stats.map((s: Tree) => {
             addNullGuards(s)
@@ -95,10 +106,12 @@ class CreateOnNull(creator: ObjectCreator) {
           ValDef(mods, name, tpt, c.resetAllAttrs(addNullGuards(rhs)))
         }
         case Select(qualifier, name) => Select(addNullGuards(qualifier), name)
-        case Ident(name) => Ident(name)
-        case This(a) => This(a)
-        case Function(valdefs, body) => Function(valdefs, body)
-        case a => reporter.error("Too complex expression `" + a + "` for YAJOM:\n1. Quick Fix: extract val without YAJOM\n2. mail gark87 <my_another@mail.ru>")
+        case Ident(name) => tree
+        case This(a) => tree
+        case Function(valdefs, body) => tree
+        case Literal(literal) => tree
+        case TypeApply(Select(qualifier, name), typeArgs) => TypeApply(Select(addNullGuards(qualifier), name), typeArgs)
+        case expr1 => reporter.error("Too complex expression `" + expr1 + "` for YAJOM CreateOnNull:\n1. Quick Fix: extract val without CreateOnNull\n2. mail gark87 <my_another@mail.ru>")
       }
     }
     val guards: c.universe.Tree = addNullGuards(expr.tree)
