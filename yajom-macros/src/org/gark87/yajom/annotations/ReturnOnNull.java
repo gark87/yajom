@@ -1,4 +1,4 @@
-package org.gark87.yajom.base;
+package org.gark87.yajom.annotations;
 
 public @interface ReturnOnNull {
     String value();

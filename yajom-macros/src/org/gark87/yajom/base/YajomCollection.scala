@@ -1,5 +1,6 @@
 package org.gark87.yajom.base
 
+import org.gark87.yajom.annotations.{ReturnOnNull, PredicateToFactory}
 
 class YajomCollection[T <: java.lang.Object](val source: java.util.Collection[T]) {
 
