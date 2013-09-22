@@ -5,11 +5,11 @@ import language.experimental.macros
 
 
 object Facade {
-  def yajom[F, T, M <: BaseMapper[_]](setter: (T) => Unit)(from: F)(implicit m: M): Unit = macro mapImpl[F, T, M]
+  def yajom[T, M <: BaseMapper[_]](setter: (T) => Unit)(from: T)(implicit m: M): Unit = macro mapImpl[T, M]
   def createOnNull[F, M <: BaseMapper[_]](func: F)(implicit m: M): F = macro CreateOnNull.macroImpl[F, M]
 
 
-  def mapImpl[F: c.WeakTypeTag, T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit])(from: c.Expr[F])(m: c.Expr[M])
+  def mapImpl[T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit])(from: c.Expr[T])(m: c.Expr[M])
   : c.Expr[Unit] = {
     import c.universe._
 

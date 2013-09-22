@@ -1,4 +1,4 @@
-package org.gark87.yajom.example
+package org.gark87.yajom.base
 
 import java.text.DateFormat
 
