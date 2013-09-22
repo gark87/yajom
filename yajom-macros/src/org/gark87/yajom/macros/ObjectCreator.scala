@@ -21,7 +21,7 @@ class ObjectCreator(val reporter: ErrorReporter) {
       false
     else {
       val method: MethodSymbol = s.asMethod
-      if (!method.name.decoded.startsWith("create"))
+       if (!method.name.decoded.startsWith("create"))
         false
       else {
         val returnType: Type = method.returnType

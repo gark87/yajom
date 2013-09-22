@@ -100,8 +100,6 @@ class CreateOnNull(creator: ObjectCreator) {
 }
 
 object CreateOnNull {
-  def createOnNull[F, M <: BaseMapper[_]](func: F)(implicit m: M): F = macro macroImpl[F, M]
-
   def macroImpl[F: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(func : c.Expr[F])(m : c.Expr[M]) : c.Expr[F] = {
     import c.universe._
 

@@ -1,15 +1,13 @@
 package org.gark87.yajom.example
 
-import org.gark87.yajom.macros._
-
-import org.gark87.yajom.example.to.{Child, Person}
-import org.gark87.yajom.example.from.{Kid, Employee}
+import org.gark87.yajom.example.to.Person
+import org.gark87.yajom.example.from.Employee
 import org.gark87.yajom.base.BaseMapper
-import org.gark87.yajom.macros.CreateOnNull._
+import org.gark87.yajom.macros.Facade._
 
 class SimpleMapper extends BaseMapper(new ExampleObjectFactory()) with StringDateConversion with CollectionCreator {
   implicit def map(from: Person, to: Employee) {
     val details = createOnNull(to.getDetails)
-    nullSafe(details.setBirth) = from.getBirthDate
+    yajom(details.setBirth)(from.getBirthDate)
   }
 }
