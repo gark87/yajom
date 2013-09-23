@@ -31,6 +31,7 @@ object Facade {
       val castedFrom: c.Expr[T] = from.asInstanceOf[c.Expr[T]]
       val guards = new CreateOnNull(creator).process(c)(setter, objectFactoryType)
       c.Expr[Unit](reify {
+        import scala.reflect.ClassTag
         guards.splice(castedFrom.splice)
       }.tree)
 //    } else {

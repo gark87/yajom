@@ -38,7 +38,7 @@ class ExtractedCollectionMapper extends DefaultMapper {
 class TypedCollectionMapper extends DefaultMapper {
   implicit def toEmployee(from: Person): Employee = {
     val result = new Employee()
-//    yajom(result.getDetails.getKids.findTyped[Girl](_.isLikeDolls == true).setKidName)(from.getChildren.get(0).getName)
+    yajom(result.getDetails.getKids.findTyped[Girl](_.isLikeDolls == true).setKidName)(from.getChildren.get(0).getName)
     result
   }
 }
@@ -74,7 +74,7 @@ class YajomCollectionTest {
   }
 
   @Test def testTyped() {
-    val mapper = new ExtractedCollectionMapper
+    val mapper = new TypedCollectionMapper
     val child: Child = new Child
     child.setName("Jane Dow")
     val person = new Person
