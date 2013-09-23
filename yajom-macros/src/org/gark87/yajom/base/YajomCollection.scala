@@ -21,7 +21,7 @@ class YajomCollection[T <: java.lang.Object](val source: java.util.Collection[T]
     elem
   }
 
-  def find(@ReturnOnNull("predicate") predicate: T => Boolean, @PredicateToFactory("predicate") create: () => T = YajomCollection.defaultFactory): T = {
+  def find(@ReturnOnNull("predicate") predicate: T => Boolean)(implicit @PredicateToFactory("predicate") create: () => T = YajomCollection.defaultFactory): T = {
     val it = source.iterator()
     while (it.hasNext) {
       val next = it.next()
@@ -35,5 +35,5 @@ class YajomCollection[T <: java.lang.Object](val source: java.util.Collection[T]
 }
 
 object YajomCollection {
-  val defaultFactory: () => Nothing = null
+  val defaultFactory: () => Nothing = () => { throw new IllegalStateException("Should be replace by YAJOM") }
 }
