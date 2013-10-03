@@ -15,11 +15,9 @@ object Facade {
   : c.Expr[Unit] = {
     import c.universe._
 
-    val reporter = new ErrorReporter(c)
-
-    val objectFactoryType: c.Type = m.actualType.asInstanceOf[TypeRef].args.head
-    val creator: ObjectCreator = new ObjectCreator(reporter)
-    val guards = new CreateOnNull(creator).process(c)(setter, objectFactoryType)
+    val y = new YajomContext(c)
+    val objectFactoryType: y.c.Type = m.actualType.asInstanceOf[TypeRef].args.head.asInstanceOf[y.c.Type]
+    val guards = y.c.Expr[(T) => Unit](y.createOnNull.process(y)(setter.asInstanceOf[y.c.Expr[(T) => Unit]], objectFactoryType))
     c.Expr[Unit](reify {
       import scala.reflect.ClassTag
       guards.splice(from.splice)
@@ -31,11 +29,10 @@ object Facade {
   : c.Expr[Unit] = {
     import c.universe._
 
-    val reporter = new ErrorReporter(c)
+    val y = new YajomContext(c)
 
-    val objectFactoryType: c.Type = m.actualType.asInstanceOf[TypeRef].args.head
-    val creator: ObjectCreator = new ObjectCreator(reporter)
-    val guards = new CreateOnNull(creator).process(c)(setter, objectFactoryType)
+    val objectFactoryType: y.c.Type = m.actualType.asInstanceOf[TypeRef].args.head.asInstanceOf[y.c.Type]
+    val guards = y.c.Expr[(T) => Unit](y.createOnNull.process(y)(setter.asInstanceOf[y.c.Expr[(T) => Unit]], objectFactoryType))
     c.Expr[Unit](reify {
       import scala.reflect.ClassTag
       val option = from.splice

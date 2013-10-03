@@ -2,12 +2,12 @@ package org.gark87.yajom.macros
 
 import scala.reflect.macros.Universe
 
-class PredicateToFactory(reporter: ErrorReporter) {
-  def process[T: c.WeakTypeTag](c: reflect.macros.Context)(expr: c.Expr[T => Boolean], objectFactoryType: c.Type): c.Expr[T => Boolean] = {
-    import c.universe._
+class PredicateToFactory() {
+  def process[T: y.c.WeakTypeTag](y : YajomContext)(expr: y.c.Expr[T => Boolean], objectFactoryType: y.c.Type): y.c.Tree = {
+    import y.c.universe._
 
-    val creator = new ObjectCreator(reporter)
-    val onNull = new CreateOnNull(creator)
+    val creator = y.creator
+    val onNull = y.createOnNull
 
     def convertEquals(tree: Tree, last: Tree): Tree = {
       tree match {
@@ -16,20 +16,20 @@ class PredicateToFactory(reporter: ErrorReporter) {
           if (decoded == "equals" || decoded == "==") {
             qualifier match {
               case Apply(Select(gQualifier, gName), List()) => {
-                onNull.findSetter(c)(gQualifier, gName, List(), (s) => {
-                  reporter.error("PredicateToFactory works with chained getters only: " + tree)
+                onNull.findSetter(y)(gQualifier, gName, List(), (s) => {
+                  y.reporter.error("PredicateToFactory works with chained getters only: " + tree)
                 }, (setterName, returnType) => {
-                  Block(Apply(Select(onNull.process(c)(c.Expr[Any](gQualifier), objectFactoryType).tree, newTermName(setterName)), List(arg)), last)
+                  Block(Apply(Select(onNull.process(y)(y.c.Expr[Any](gQualifier), objectFactoryType), newTermName(setterName)), List(arg)), last)
                 })
               }
-              case _ => reporter.error("PredicateToFactory last call before equals should be getter, not: " + qualifier)
+              case _ => y.reporter.error("PredicateToFactory last call before equals should be getter, not: " + qualifier)
             }
           } else {
-            reporter.error("PredicateToFactory works with && of == or equals: " + tree)
+            y.reporter.error("PredicateToFactory works with && of == or equals: " + tree)
           }
         }
         case _ => {
-          reporter.error("PredicateToFactory works with && of == or equals: " + tree)
+          y.reporter.error("PredicateToFactory works with && of == or equals: " + tree)
         }
       }
     }
@@ -43,17 +43,17 @@ class PredicateToFactory(reporter: ErrorReporter) {
             convertEquals(tree, last)
           }
         }
-        case _ => reporter.error("PredicateToFactory works with one-parameter function only(&& and ==): " + tree)
+        case _ => y.reporter.error("PredicateToFactory works with one-parameter function only(&& and ==): " + tree)
       }
     }
     val tree: Tree = expr.tree
     tree match {
       case Function(List(ValDef(mods, name, tpt, rhs)), body) => {
-        val valDef = ValDef(Modifiers(), name, tpt, creator.createDefaultObject[T](c)(tpt.tpe, objectFactoryType).tree)
+        val valDef = ValDef(Modifiers(), name, tpt, creator.createDefaultObject[T](y)(tpt.tpe, objectFactoryType).asInstanceOf[y.c.Tree])
         val sss= convertAnd(body, Ident(name))
-        c.Expr[T => Boolean](Function(List(), Block(valDef, sss)))
+        Function(List(), Block(valDef, sss))
       }
-      case _ => reporter.error("Unexpected (waiting for function def with one param): " + tree)
+      case _ => y.reporter.error("Unexpected (waiting for function def with one param): " + tree)
     }
   }
 }

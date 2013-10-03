@@ -1,12 +1,17 @@
 package org.gark87.yajom.macros
 
-/**
- * Created with IntelliJ IDEA.
- * User: gark87
- * Date: 22.09.13
- * Time: 15:19
- * To change this template use File | Settings | File Templates.
- */
-class YajomContext {
+import scala.reflect.macros.Context
 
+class YajomContext(val c: Context) {
+  val reporter = new ErrorReporter(c)
+
+  val creator = new ObjectCreator
+
+  val argsConverter = new ArgsConverter
+
+  val createOnNull = new CreateOnNull
+
+  val returnOnNull = new ReturnOnNull
+
+  val predicateToFactory = new PredicateToFactory
 }
