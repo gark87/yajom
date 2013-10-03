@@ -35,5 +35,5 @@ class YajomCollection[T <: java.lang.Object](val source: java.util.Collection[T]
 }
 
 object YajomCollection {
-  val defaultFactory: () => Nothing = () => { throw new IllegalStateException("Should be replace by YAJOM") }
+  val defaultFactory: () => Nothing = () => { throw new IllegalStateException("Should be replaced by YAJOM") }
 }
