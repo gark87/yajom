@@ -20,27 +20,30 @@ class CreateOnNull {
       case List(List()) => true
       case _ => false
     }
-    val correctName = getterName.startsWith("get") || getterName.startsWith("is")
-    val setterName = getterName.replaceFirst("^(is|get)", "set")
-    val returnType: y.c.Type = getter.returnType
-    val setter = qualifier.tpe.members.find((x: Symbol) => {
-      if (!x.isMethod)
-        false
-      else {
-        val method: MethodSymbol = x.asMethod
-        val correctSetterParams = method.paramss match {
-          case List(List(termSymbol)) => termSymbol.asTerm.typeSignature == returnType
-          case _ => false
-        }
-        method.isMethod && correctSetterParams && method.isPublic && setterName == method.name.decoded
+    val returnType = getter.returnType
+    y.settings.expectSetter(y.c)(getterName, returnType) match {
+      case None => {
+        notGetter(getter)
       }
-    })
-    if (!correctName || !correctParams || !args.isEmpty) {
-      notGetter(getter)
-    } else if (setter.isEmpty) {
-      y.reporter.error("Cannot find setter for " + name + " @ " + qualifier)
-    } else {
-      ok(setterName, returnType)
+      case Some(setterName) => {
+        val setter = qualifier.tpe.members.find((x: Symbol) => {
+          if (!x.isMethod)
+            false
+          else {
+            val method: MethodSymbol = x.asMethod
+            val correctSetterParams = method.paramss match {
+              case List(List(termSymbol)) => termSymbol.asTerm.typeSignature == returnType
+              case _ => false
+            }
+            method.isMethod && correctSetterParams && method.isPublic && setterName == method.name.decoded
+          }
+        })
+        if (setter.isEmpty) {
+          y.reporter.error("Cannot find setter for " + name + " @ " + qualifier)
+        } else {
+          ok(setterName, returnType)
+        }
+      }
     }
   }
 
