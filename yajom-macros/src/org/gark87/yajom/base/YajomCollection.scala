@@ -5,6 +5,17 @@ import scala.reflect.ClassTag
 
 class YajomCollection[T <: java.lang.Object](val source: java.util.Collection[T]) {
 
+  def any[A <: T : ClassTag](): T = {
+    val it = source.iterator()
+    if (it.hasNext)
+      it.next
+    else {
+      val newValue = implicitly[ClassTag[A]].runtimeClass.newInstance().asInstanceOf[A]
+      source.add(newValue)
+      newValue
+    }
+  }
+
   def findTyped[A <: T : ClassTag](@ReturnOnNull("predicate") predicate: A => Boolean, @PredicateToFactory("predicate") create: () => A = YajomCollection.defaultFactory): A = {
     val it = source.iterator()
     while (it.hasNext) {

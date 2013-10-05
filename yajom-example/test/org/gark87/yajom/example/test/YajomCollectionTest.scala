@@ -43,6 +43,15 @@ class TypedCollectionMapper extends DefaultMapper {
   }
 }
 
+
+class AnyMapper extends DefaultMapper {
+  implicit def toEmployee(from: Person): Employee = {
+    val result = new Employee()
+    yajom(result.getDetails.getKids.any[Kid].setKidName)(from.getChildren.get(0).getName)
+    result
+  }
+}
+
 class YajomCollectionTest {
   @Test def testTwo() {
     val mapper = new ComplexCollectionMapper
@@ -86,6 +95,20 @@ class YajomCollectionTest {
     assertEquals("Jane Dow", kid.getKidName)
     assertTrue(kid.isInstanceOf[Girl])
     assertTrue(kid.asInstanceOf[Girl].isLikeDolls)
+  }
+
+
+  @Test def testAny() {
+    val mapper = new AnyMapper
+    val child: Child = new Child
+    child.setName("Jane Dow")
+    val person = new Person
+    person.setChildren(util.Arrays.asList(child))
+    val employee = mapper.toEmployee(person)
+    val kids: util.Set[Kid] = employee.getDetails.getKids
+    assertEquals(1, kids.size())
+    val kid: Kid = kids.iterator().next
+    assertEquals("Jane Dow", kid.getKidName)
   }
 
 }
