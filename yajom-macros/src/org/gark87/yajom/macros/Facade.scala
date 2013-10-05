@@ -6,28 +6,28 @@ import scala.reflect.macros.Context
 
 
 object Facade {
-  def yajomMap[T, F, M <: BaseMapper[_]](setter: (T) => Unit)(from: F)(implicit m: M): Unit = macro yajomMapImpl[T, F, M]
+  def yajomMap[T, F, M <: BaseMapper[_]](setter: (T) => _)(from: F)(implicit m: M): Unit = macro yajomMapImpl[T, F, M]
 
-  def yajom[T, M <: BaseMapper[_]](setter: (T) => Unit)(from: T)(implicit m: M): Unit = macro yajomImpl[T, M]
+  def yajom[T, M <: BaseMapper[_]](setter: (T) => _)(from: T)(implicit m: M): Unit = macro yajomImpl[T, M]
 
-  def yajomOption[T, M <: BaseMapper[_]](setter: (T) => Unit)(from: Option[T])(implicit m: M): Unit = macro optionImpl[T, M]
+  def yajomOption[T, M <: BaseMapper[_]](setter: (T) => _)(from: Option[T])(implicit m: M): Unit = macro optionImpl[T, M]
 
   def createOnNull[F, M <: BaseMapper[_]](func: F)(implicit m: M): F = macro CreateOnNull.macroImpl[F, M]
 
-  def yajomImpl[T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit])(from: c.Expr[T])(m: c.Expr[M])
+  def yajomImpl[T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => _])(from: c.Expr[T])(m: c.Expr[M])
   : c.Expr[Unit] = {
     import c.universe._
 
     val y = new YajomContext(c)
     val objectFactoryType = m.actualType.asInstanceOf[TypeRef].args.head.asInstanceOf[y.c.Type]
-    val guards = y.c.Expr[(T) => Unit](y.createOnNull.process(y)(setter.asInstanceOf[y.c.Expr[(T) => Unit]], objectFactoryType))
+    val guards = y.c.Expr[(T) => _](y.createOnNull.process(y)(setter.asInstanceOf[y.c.Expr[(T) => _]], objectFactoryType))
     c.Expr[Unit](reify {
       import scala.reflect.ClassTag
       guards.splice(from.splice)
     }.tree)
   }
 
-  def yajomMapImpl[T: c.WeakTypeTag, F: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit])(from: c.Expr[F])(m: c.Expr[M])
+  def yajomMapImpl[T: c.WeakTypeTag, F: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => _])(from: c.Expr[F])(m: c.Expr[M])
   : c.Expr[Unit] = {
     import c.universe._
 
@@ -67,14 +67,14 @@ object Facade {
     )
   }
 
-  def optionImpl[T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => Unit])(from: c.Expr[Option[T]])(m: c.Expr[M])
+  def optionImpl[T: c.WeakTypeTag, M <: BaseMapper[_]](c: reflect.macros.Context)(setter: c.Expr[(T) => _])(from: c.Expr[Option[T]])(m: c.Expr[M])
   : c.Expr[Unit] = {
     import c.universe._
 
     val y = new YajomContext(c)
 
     val objectFactoryType: y.c.Type = m.actualType.asInstanceOf[TypeRef].args.head.asInstanceOf[y.c.Type]
-    val guards = y.c.Expr[(T) => Unit](y.createOnNull.process(y)(setter.asInstanceOf[y.c.Expr[(T) => Unit]], objectFactoryType))
+    val guards = y.c.Expr[(T) => _](y.createOnNull.process(y)(setter.asInstanceOf[y.c.Expr[(T) => _]], objectFactoryType))
     c.Expr[Unit](reify {
       import scala.reflect.ClassTag
       val option = from.splice
