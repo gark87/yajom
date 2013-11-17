@@ -4,9 +4,7 @@ import org.gark87.yajom.base.BaseMapper
 import org.gark87.yajom.example.to.{Gender, Person}
 import org.gark87.yajom.example.from.{Details, Employee}
 import org.gark87.yajom.macros.Facade._
-import org.junit.Assert._
 import java.util.Date
-import org.junit.Test
 
 class SimpleMapper extends BaseMapper {
   implicit def toEmployee(from: Person): Employee = {
@@ -33,25 +31,24 @@ class SimpleTest extends MapperTest {
   private val mapper = new SimpleMapper
   private val mapMapper = new MapSimpleMapper
 
-
-  @Test def testSimple() {
+  test("Map Person without Details") {
     val employee = mapper.toEmployee(person)
     val to = new Employee
     mapMapper.map(person, to)
     List(to, employee).foreach(employee => {
-      assertNotNull(employee)
-      assertNotNull(employee.getDetails)
-      assertNull(employee.getDetails.getBirth)
+      assert(null != employee)
+      assert(null != employee.getDetails)
+      assert(null == employee.getDetails.getBirth)
     })
   }
 
-  @Test def testFilledDetails() {
+  test("Map Person with Details") {
     person.setBirthDate(new Date(0))
     val employee = mapper.toEmployee(person)
     val to = new Employee
     mapMapper.map(person, to)
     List(to, employee).foreach(employee => {
-      assertEquals(new Date(0), employee.getDetails.getBirth)
+      assert(new Date(0) == employee.getDetails.getBirth)
     })
   }
 }

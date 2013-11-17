@@ -4,8 +4,6 @@ import org.gark87.yajom.base.DefaultMapper
 import org.gark87.yajom.example.to.{Child, Person}
 import org.gark87.yajom.example.from.{Girl, Kid, Employee}
 import org.gark87.yajom.macros.Facade._
-import org.junit.Assert._
-import org.junit.Test
 import java.util
 
 class YajomCollectionMapper extends DefaultMapper {
@@ -52,8 +50,8 @@ class AnyMapper extends DefaultMapper {
   }
 }
 
-class YajomCollectionTest {
-  @Test def testTwo() {
+class YajomCollectionTest extends MapperTest {
+  test("ComplexCollectionMapper") {
     val mapper = new ComplexCollectionMapper
     val child: Child = new Child
     child.setName("Jane Dow")
@@ -61,14 +59,13 @@ class YajomCollectionTest {
     person.setChildren(util.Arrays.asList(child))
     val employee = mapper.toEmployee(person)
     val kids: util.Set[Kid] = employee.getDetails.getKids
-    assertEquals(1, kids.size())
+    assert(1 == kids.size())
     val kid: Kid = kids.iterator().next
-    assertEquals("143", kid.getAge)
-    assertEquals("Jane Dow", kid.getKidName)
+    assert("143" == kid.getAge)
+    assert("Jane Dow" == kid.getKidName)
   }
 
-
-  @Test def testExtracted() {
+  test("ExtractedCollectionMapper") {
     val mapper = new ExtractedCollectionMapper
     val child: Child = new Child
     child.setName("Jane Dow")
@@ -76,13 +73,13 @@ class YajomCollectionTest {
     person.setChildren(util.Arrays.asList(child))
     val employee = mapper.toEmployee(person)
     val kids: util.Set[Kid] = employee.getDetails.getKids
-    assertEquals(1, kids.size())
+    assert(1 == kids.size())
     val kid: Kid = kids.iterator().next
-    assertEquals("143", kid.getAge)
-    assertEquals("Jane Dow", kid.getKidName)
+    assert("143" == kid.getAge)
+    assert("Jane Dow" == kid.getKidName)
   }
 
-  @Test def testTyped() {
+  test("TypedCollectionMapper") {
     val mapper = new TypedCollectionMapper
     val child: Child = new Child
     child.setName("Jane Dow")
@@ -90,15 +87,15 @@ class YajomCollectionTest {
     person.setChildren(util.Arrays.asList(child))
     val employee = mapper.toEmployee(person)
     val kids: util.Set[Kid] = employee.getDetails.getKids
-    assertEquals(1, kids.size())
+    assert(1 == kids.size())
     val kid: Kid = kids.iterator().next
-    assertEquals("Jane Dow", kid.getKidName)
-    assertTrue(kid.isInstanceOf[Girl])
-    assertTrue(kid.asInstanceOf[Girl].isLikeDolls)
+    assert("Jane Dow" == kid.getKidName)
+    assert(kid.isInstanceOf[Girl])
+    assert(kid.asInstanceOf[Girl].isLikeDolls)
   }
 
 
-  @Test def testAny() {
+  test("AnyMapper") {
     val mapper = new AnyMapper
     val child: Child = new Child
     child.setName("Jane Dow")
@@ -106,9 +103,9 @@ class YajomCollectionTest {
     person.setChildren(util.Arrays.asList(child))
     val employee = mapper.toEmployee(person)
     val kids: util.Set[Kid] = employee.getDetails.getKids
-    assertEquals(1, kids.size())
+    assert(1 == kids.size())
     val kid: Kid = kids.iterator().next
-    assertEquals("Jane Dow", kid.getKidName)
+    assert("Jane Dow" == kid.getKidName)
   }
 
 }

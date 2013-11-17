@@ -1,13 +1,13 @@
 package org.gark87.yajom.example.test
 
 import org.gark87.yajom.example.to.Person
-import org.junit.Before
+import org.scalatest.FunSuite
+import org.scalatest.BeforeAndAfter
 
-class MapperTest {
+class MapperTest extends FunSuite with BeforeAndAfter {
   var person: Person = null
 
-  @Before
-  def init() = {
+  before {
     person = new Person
   }
 }

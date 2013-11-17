@@ -4,9 +4,7 @@ import org.gark87.yajom.base.BaseMapper
 import org.gark87.yajom.example.to.{Child, Person}
 import org.gark87.yajom.example.from.Employee
 import org.gark87.yajom.macros.Facade._
-import org.junit.Assert._
 import java.util.Date
-import org.junit.Test
 import java.util
 
 class OptionMapper extends BaseMapper {
@@ -28,31 +26,31 @@ class OptionMapper extends BaseMapper {
 class OptionTest extends MapperTest {
   private val mapper = new OptionMapper
 
-  @Test def testSimple() {
+  test("Default Person") {
     val employee = mapper.toEmployee(person)
-    assertNull(employee.getDetails)
+    assert(null == employee.getDetails)
   }
 
-  @Test def testEmpty() {
+  test("Default Person with empty collection") {
     person.setChildren(new util.ArrayList[Child]())
     val employee = mapper.toEmployee(person)
-    assertNull(employee.getDetails)
+    assert(null == employee.getDetails)
   }
 
-  @Test def testNull() {
+  test("Default Person with non-empty collection") {
     person.setChildren(new util.ArrayList[Child]())
     person.getChildren.add(new Child)
     val employee = mapper.toEmployee(person)
-    assertNotNull(employee.getDetails)
-    assertNull(employee.getDetails.getBirth)
+    assert(null != employee.getDetails)
+    assert(null == employee.getDetails.getBirth)
   }
 
-  @Test def testNotNull() {
+  test("Default Person with non-empty collection and Birth-date") {
     person.setChildren(new util.ArrayList[Child]())
     person.getChildren.add(new Child)
     person.setBirthDate(new Date(0))
     val employee = mapper.toEmployee(person)
-    assertNotNull(employee.getDetails)
-    assertEquals(new Date(0), employee.getDetails.getBirth)
+    assert(null != employee.getDetails)
+    assert(new Date(0) == employee.getDetails.getBirth)
   }
 }

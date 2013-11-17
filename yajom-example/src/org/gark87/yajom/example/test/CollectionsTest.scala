@@ -4,8 +4,6 @@ import org.gark87.yajom.base.DefaultMapper
 import org.gark87.yajom.example.to.{Child, Person}
 import org.gark87.yajom.example.from.{Kid, Employee}
 import org.gark87.yajom.macros.Facade._
-import org.junit.Assert._
-import org.junit.Test
 import java.util
 
 class CollectionsMapper extends DefaultMapper {
@@ -30,22 +28,22 @@ class CollectionsMapper extends DefaultMapper {
 class CollectionsTest extends MapperTest {
   private val mapper = new CollectionsMapper
 
-  @Test def testSimple() {
+  test("Only empty Employee with Details shoule be created") {
     val employee = mapper.toEmployee(person)
-    assertNotNull(employee)
-    assertNotNull(employee.getDetails)
-    assertNull(employee.getDetails.getBirth)
-    assertNull(employee.getLast)
-    assertNull(employee.getDetails.getKids)
+    assert(null != employee)
+    assert(null != employee.getDetails)
+    assert(null == employee.getDetails.getBirth)
+    assert(null == employee.getLast)
+    assert(null == employee.getDetails.getKids)
   }
 
-  @Test def testEmptyCollection() {
+  test("Empty collection of Kids should be created") {
     person.setChildren(new util.ArrayList[Child])
     val employee = mapper.toEmployee(person)
-    assertEquals(0, employee.getDetails.getKids.size())
+    assert(0 == employee.getDetails.getKids.size())
   }
 
-  @Test def testFilledCollection() {
+  test("Non-empty collection of Kids should be created") {
     person.setChildren(new util.ArrayList[Child])
     val child = new Child()
     child.setAge(12)
@@ -53,9 +51,9 @@ class CollectionsTest extends MapperTest {
     person.getChildren.add(child)
     val employee = mapper.toEmployee(person)
     val kids = employee.getDetails.getKids
-    assertEquals(1, kids.size())
+    assert(1 == kids.size())
     val kid = kids.iterator().next()
-    assertEquals("12", kid.getAge)
-    assertEquals("John Dow", kid.getKidName)
+    assert("12" == kid.getAge)
+    assert("John Dow" == kid.getKidName)
   }
 }
